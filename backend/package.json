@@ -1,8 +1,8 @@
 {
-  "name": "typequest",
+  "name": "typequest-server",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",
+  "license": "Unlicense",
   "dependencies": {
     "@types/node": "^20.3.3",
     "axios": "^1.4.0",
