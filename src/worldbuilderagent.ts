@@ -182,6 +182,9 @@ const agentFunctions = [
     {
         name: "clearHistory",
         description: "Clear the chat history.",
-        // TODO: this blows up
+        parameters: {
+            type: "object",
+            properties: {},
+        }
     }
 ];

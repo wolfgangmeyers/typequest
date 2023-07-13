@@ -40,36 +40,13 @@ rl.on("line", async (input) => {
         case "south":
         case "east":
         case "west":
-            // TODO: convert the controller to return strings for everything
-            const moved = controller.move(command);
-            if (moved) {
-                const coordinates = controller.coordinates();
-                if (coordinates) {
-                    const place = worldGrid.getPlace(
-                        coordinates.x,
-                        coordinates.y
-                    );
-                    if (place) {
-                        output = place.description;
-                    } else {
-                        output = "You see nothing special.";
-                    }
-                }
-            } else {
-                output = "You can't move that way.";
-            }
-
+            output = controller.move(command);
             break;
         case "examine":
             output = controller.examineSurroundings();
             break;
         case "coordinates":
-            const coordinates = controller.coordinates();
-            if (!coordinates) {
-                output = "You are nowhere.";
-            } else {
-                output = `You are at ${coordinates.x}, ${coordinates.y}.`;
-            }
+            output = controller.coordinates();
             break;
         case "mode: build":
             mode = "build";

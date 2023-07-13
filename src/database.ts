@@ -10,7 +10,6 @@ export class WorldGrid {
     constructor(private saveInterval = 60 * 1000, private dataFile = GRID_DATA_FILE) {
         this.places = new Map();
         this.saveIntervalHandle = null;
-        
     }
 
     createPlace(coordinates: Coordinates, description: string, detailedDescription: string): Place {
