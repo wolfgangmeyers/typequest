@@ -71,15 +71,14 @@ export class WorldGridManager {
         return true;
     }
 
-    public savePlace(coordinates: Coordinates, description: string, detailedDescription: string): boolean {
+    public savePlace(coordinates: Coordinates, description: string, detailedDescription: string) {
         const place = this.worldGrid.getPlace(coordinates.x, coordinates.y);
         if (place) {
             place.description = description;
             place.detailedDescription = detailedDescription;
-            return true;
+            return;
         }
         this.worldGrid.createPlace(coordinates, description, detailedDescription);
-        return true;
     }
 
     public destroyPlace(coordinates: Coordinates): string {

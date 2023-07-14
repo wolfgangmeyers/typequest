@@ -1,35 +1,36 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import Container from "react-bootstrap/Container";
+import Login from "./Login";
+import CommandLineInterface from "./CommandLineInterface";
+import { GameClient } from "./client";
+
+const gameClient = new GameClient("ws://localhost:3000");
 
 function App() {
-  const [count, setCount] = useState(0)
+    const [username, setUsername] = useState("");
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    const handleLogin = (username: string) => {
+        // TODO: deal with username taken... etc.
+        gameClient.connect();
+        // this auto-logs the user in on connection
+        gameClient.on("connect", () => {
+            gameClient.login(username);
+            setUsername(username);
+        });
+        gameClient.on("disconnect", () => {
+            console.log("disconnected");
+            setUsername("");
+        });
+    };
+
+    return username ? (
+        <Container>
+            <CommandLineInterface gameClient={gameClient} />
+        </Container>
+    ) : (
+        <Login onLogin={handleLogin} />
+    );
 }
 
-export default App
+export default App;
