@@ -1,23 +1,17 @@
 
 import * as nanoId from "nanoid";
-import { Coordinates, Entity } from "./models";
+import { Coordinates, Entity, EntityType } from "./models";
 
-export interface IEntityManager {
-    createEntity(coordinates: Coordinates): string;
-    getEntity(id: string): Entity | undefined;
-    destroyEntity(id: string): boolean;
-}
-
-export class EntityManager implements IEntityManager {
+export class EntityManager {
     private entities: Map<string, Entity>;
 
     constructor() {
         this.entities = new Map();
     }
 
-    public createEntity(coordinates: Coordinates): string {
+    public createEntity(coordinates: Coordinates, type: EntityType, name: string): string {
         const id = nanoId.nanoid();
-        const entity = { id, coordinates };
+        const entity = { id, coordinates, type, name };
         this.entities.set(id, entity);
         return id;
     }
@@ -30,4 +24,3 @@ export class EntityManager implements IEntityManager {
         return this.entities.delete(id);
     }
 }
-

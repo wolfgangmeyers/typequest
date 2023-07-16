@@ -24,6 +24,8 @@ export class WorldBuilderAgent {
         this.functionMap.set("savePlace", this.savePlace.bind(this));
         this.functionMap.set("destroyPlace", this.destroyPlace.bind(this));
         this.functionMap.set("answerQuestion", this.answerQuestion.bind(this));
+        this.functionMap.set("addBlockedDirection", this.addBlockedDirection.bind(this));
+        this.functionMap.set("removeBlockedDirection", this.removeBlockedDirection.bind(this));
     }
 
     private async completion(messageHistory: MessageHistory, prompt: string): Promise<any> {
@@ -133,6 +135,45 @@ Functions have been provided to allow you to interact with the world building pl
     private async answerQuestion(answer: AnswerInput): Promise<string> {
         return answer.answer;
     }
+
+    private async addBlockedDirection(input: AddBlockedDirectionInput): Promise<string> {
+        console.log("Adding blocked direction", input);
+        const place = this.worldGridManager.getPlace(input.x, input.y);
+        if (!place) {
+            return "Place not found.";
+        }
+        if (!place.blockedDirections) {
+            place.blockedDirections = {};
+        }
+        place.blockedDirections[input.direction] = input.description;
+        return `Blocked direction added at ${input.x}, ${input.y}. "${input.description}"`;
+    }
+
+    private async removeBlockedDirection(input: RemoveBlockedDirectionInput): Promise<string> {
+        console.log("Removing blocked direction", input);
+        const place = this.worldGridManager.getPlace(input.x, input.y);
+        if (!place) {
+            return "Place not found.";
+        }
+        if (!place.blockedDirections) {
+            place.blockedDirections = {};
+        }
+        delete place.blockedDirections[input.direction];
+        return `Blocked direction removed at ${input.x}, ${input.y}.`;
+    }
+}
+
+interface AddBlockedDirectionInput {
+    x: number;
+    y: number;
+    direction: string;
+    description: string;
+}
+
+interface RemoveBlockedDirectionInput {
+    x: number;
+    y: number;
+    direction: string;
 }
 
 interface SavePlaceInput {
@@ -216,4 +257,48 @@ const agentFunctions = [
             required: ["answer"],
         },
     },
+    {
+        name: "addBlockedDirection",
+        description: "Add a blocked direction to the place at x, y.",
+        parameters: {
+            type: "object",
+            properties: {
+                x: {
+                    type: "integer",
+                },
+                y: {
+                    type: "integer",
+                },
+                direction: {
+                    type: "string",
+                    description: "The direction to block. Should be north, south, east, or west.",
+                },
+                description: {
+                    type: "string",
+                    description: "The description of the blocked direction.",
+                },
+            },
+            required: ["x", "y", "direction", "description"],
+        },
+    },
+    {
+        name: "removeBlockedDirection",
+        description: "Remove a blocked direction from the place at x, y.",
+        parameters: {
+            type: "object",
+            properties: {
+                x: {
+                    type: "integer",
+                },
+                y: {
+                    type: "integer",
+                },
+                direction: {
+                    type: "string",
+                    description: "The direction to unblock. Should be north, south, east, or west.",
+                },
+            },
+            required: ["x", "y", "direction"],
+        },
+    }
 ];

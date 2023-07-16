@@ -38,8 +38,14 @@ function CommandLineInterface({ gameClient }: Props) {
         setOutput(newOutput);
     };
 
+    gameClient.on("login", (message: any) => {
+        addToOutput(message);
+    });
     gameClient.on("command", (message: any) => {
         addToOutput(message);
+    });
+    gameClient.on("connect", () => {
+        setOutput([]);
     });
 
     useEffect(() => {

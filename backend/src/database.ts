@@ -3,7 +3,7 @@ import { Coordinates, Place } from "./models";
 
 const GRID_DATA_FILE = "grid.json";
 
-export class WorldGrid {
+export class WorldState {
     private places: Map<string, Place>;
     private saveIntervalHandle: NodeJS.Timeout | null;
 
