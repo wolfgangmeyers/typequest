@@ -28,7 +28,8 @@ function CommandLineInterface({ gameClient }: Props) {
     };
 
     const addToOutput = (message: string) => {
-        let newOutput = [...output, message];
+        const lines = message.split("\n");
+        let newOutput = [...output, ...lines];
 
         // Limit history to 200 entries for performance
         if (newOutput.length > 200) {
@@ -43,6 +44,9 @@ function CommandLineInterface({ gameClient }: Props) {
     });
     gameClient.on("command", (message: any) => {
         addToOutput(message);
+    });
+    gameClient.on("place_event", (message: any) => {
+        addToOutput(message.message);
     });
     gameClient.on("connect", () => {
         setOutput([]);

@@ -23,3 +23,10 @@ export interface Entity {
     name: string;
     // Additional properties such as name, inventory, etc.
 };
+
+export interface NotifyPlaceEvent {
+    x: number;
+    y: number;
+    sourceEntity?: string;
+    message: string;
+}

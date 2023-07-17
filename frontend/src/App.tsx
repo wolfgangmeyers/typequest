@@ -10,26 +10,35 @@ const gameClient = new GameClient("ws://localhost:3000");
 function App() {
     const [username, setUsername] = useState("");
 
-    const handleLogin = (username: string) => {
-        // TODO: deal with username taken... etc.
-        gameClient.connect();
-        // this auto-logs the user in on connection
-        gameClient.on("connect", () => {
-            gameClient.login(username);
-            setUsername(username);
-        });
-        gameClient.on("disconnect", () => {
+    useEffect(() => {
+        const onConnect = () => {
+            if (username) {
+                gameClient.login(username);
+            }
+        };
+        const onDisconnect = () => {
             console.log("disconnected");
             setUsername("");
-        });
-    };
+        };
+        // this auto-logs the user in on connection
+        gameClient.on("connect", onConnect);
+        gameClient.on("disconnect", onDisconnect);
+        if (username) {
+            gameClient.connect();
+        }
+        
+        return () => {
+            gameClient.off("connect", onConnect);
+            gameClient.off("disconnect", onDisconnect);
+        }
+    }, [username]);
 
     return username ? (
         <Container>
             <CommandLineInterface gameClient={gameClient} />
         </Container>
     ) : (
-        <Login onLogin={handleLogin} />
+        <Login onLogin={setUsername} />
     );
 }
 

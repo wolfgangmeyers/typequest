@@ -1,19 +1,29 @@
-import { WorldState } from "./database";
-import { EntityManager } from "./entittymanager";
-import { Coordinates, EntityType } from "./models";
+import { Database } from "./database";
+import { Coordinates, EntityType, NotifyPlaceEvent } from "./models";
 
 export interface MoveEntityResult {
     success: boolean;
+    oldCoordinates?: Coordinates;
+    newCoordinates?: Coordinates;
     message?: string;
 }
 
-export class WorldGridManager {
-    private worldGrid: WorldState;
-    private entityManager: EntityManager;
+type NotifyPlaceListener = (event: NotifyPlaceEvent) => void;
+type NotifyPlaceListeners = {[key: string]: {[key: string]: NotifyPlaceListener}};
 
-    constructor(worldGrid: WorldState, entityManager: EntityManager) {
+const oppositeDirections: {[key: string]: string} = {
+    north: "south",
+    south: "north",
+    east: "west",
+    west: "east",
+};
+
+export class WorldGridManager {
+    private worldGrid: Database;
+    private notifyPlaceListeners: NotifyPlaceListeners = {};
+
+    constructor(worldGrid: Database) {
         this.worldGrid = worldGrid;
-        this.entityManager = entityManager;
     }
 
     init(): void {
@@ -23,12 +33,47 @@ export class WorldGridManager {
         }
     }
 
+    public addNotifyPlaceListener(coordinates: Coordinates, entityId: string, listener: NotifyPlaceListener) {
+        const key = `${coordinates.x},${coordinates.y}`;
+        if (!this.notifyPlaceListeners[key]) {
+            this.notifyPlaceListeners[key] = {};
+        }
+        this.notifyPlaceListeners[key][entityId] = listener;
+    }
+
+    public removeNotifyPlaceListener(coordinates: Coordinates, entityId: string) {
+        const key = `${coordinates.x},${coordinates.y}`;
+        if (!this.notifyPlaceListeners[key]) {
+            return;
+        }
+        const listeners = this.notifyPlaceListeners[key];
+        if (!listeners[entityId]) {
+            return;
+        }
+        delete listeners[entityId];
+    }
+
+    public notifyPlace(event: NotifyPlaceEvent) {
+        const key = `${event.x},${event.y}`;
+        if (!this.notifyPlaceListeners[key]) {
+            return;
+        }
+        const listeners = this.notifyPlaceListeners[key];
+        Object.keys(listeners).forEach((entityId) => {
+            if (event.sourceEntity && entityId === event.sourceEntity) {
+                return;
+            }
+            const listener = listeners[entityId];
+            listener(event);
+        });
+    }
+
     public moveEntity(entityId: string, direction: string): MoveEntityResult {
         // Logic to move entity to newCoordinates.
         // Check if the move is valid, update the entity's coordinates,
         // and update the entityIds in the respective places.
         // Return true if the move was successful, false otherwise.
-        const entity = this.entityManager.getEntity(entityId);
+        const entity = this.worldGrid.getEntity(entityId);
         if (!entity) {
             return {
                 success: false,
@@ -70,8 +115,24 @@ export class WorldGridManager {
         oldPlace.entityIds.splice(i, 1);
         newPlace.entityIds.push(entityId);
         entity.coordinates = newCoordinates;
+        // notify place listeners that entity has left
+        this.notifyPlace({
+            x: oldCoordinates.x,
+            y: oldCoordinates.y,
+            sourceEntity: entityId,
+            message: `${entity.name} has left to the ${direction}.`,
+        })
+        // notify place listeners that entity has arrived
+        this.notifyPlace({
+            x: newCoordinates.x,
+            y: newCoordinates.y,
+            sourceEntity: entityId,
+            message: `${entity.name} has arrived from the ${oppositeDirections[direction]}.`,
+        })
         return {
             success: true,
+            oldCoordinates,
+            newCoordinates,
         };
     }
 
@@ -94,17 +155,17 @@ export class WorldGridManager {
     }
 
     public createEntity(coordinates: Coordinates, type: EntityType, name: string): string {
-        const entityId = this.entityManager.createEntity(coordinates, type, name);
-        const place = this.worldGrid.getPlace(coordinates.x, coordinates.y);
+        const entity = this.worldGrid.createEntity(coordinates, type, name);
+        const place = this.worldGrid.getPlace(entity.coordinates.x, entity.coordinates.y);
         if (!place) {
-            return entityId;
+            return entity.id;
         }
-        place.entityIds.push(entityId);
-        return entityId;
+        place.entityIds.push(entity.id);
+        return entity.id;
     }
 
     public destroyEntity(entityId: string): boolean {
-        const entity = this.entityManager.getEntity(entityId);
+        const entity = this.worldGrid.getEntity(entityId);
         if (!entity) {
             return false;
         }
@@ -117,7 +178,13 @@ export class WorldGridManager {
             return false;
         }
         place.entityIds.splice(i, 1);
-        this.entityManager.destroyEntity(entityId);
+        this.worldGrid.destroyEntity(entityId);
+        this.notifyPlace({
+            x: entity.coordinates.x,
+            y: entity.coordinates.y,
+            sourceEntity: entityId,
+            message: `${entity.name} vanishes into thin air.`,
+        })
         return true;
     }
 
