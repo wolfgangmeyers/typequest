@@ -43,7 +43,6 @@ export class EntityController extends EventEmitter {
         )
     }
 
-    // TODO: ******** a way to subscribe to the world grid manager to receive events, and emit events to the client
     public move(direction: string): string {
         const entity = this.database.getEntity(this.entityId);
         // console.log("Moving entity", entity)

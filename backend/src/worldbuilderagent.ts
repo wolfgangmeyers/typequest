@@ -85,6 +85,15 @@ Functions have been provided to allow you to interact with the world building pl
     }
 
     public async processCommand(messageHistory: MessageHistory, command: string): Promise<string> {
+        if (command === "help") {
+            return `The builder AI can perform the following functions:
+create or update a place in the world at x, y coordinates ("Create a village square at 0, 1")
+destroy a place in the world at x, y coordinates ("destroy the place at 0, 1")
+answer a question ("how are you doing today?")
+add a blocked direction to a place ("add a blocked direction to the north at 0, 1 due to debris in the way")
+remove a blocked direction from a place ("remove the blocked direction to the north at 0, 1")
+            `
+        }
         const result = await this.completion(messageHistory, command);
         // console.log("RESULT", JSON.stringify(result, null, 2));
         // if result is a string, return it

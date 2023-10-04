@@ -179,6 +179,15 @@ async function processCommand(
             worldGrid.save();
             output = "World saved";
             break;
+        case "/help":
+            output = "Commands:\n\n" +
+                "/examine - examine your surroundings\n" +
+                "/coordinates - show your current coordinates\n" +
+                "/build - interact with the world builder ai\n" +
+                "/say - say something\n" +
+                "/emote - emote something\n" +
+                "/save - save the world\n" +
+                "/help - show this help message\n";
         case "":
             break;
         default:

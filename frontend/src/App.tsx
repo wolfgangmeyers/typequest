@@ -5,7 +5,7 @@ import Login from "./Login";
 import CommandLineInterface from "./CommandLineInterface";
 import { GameClient } from "./client";
 
-const gameClient = new GameClient("ws://localhost:3000");
+const gameClient = new GameClient(`wss://typequest-api.ngrok.io`);
 
 function App() {
     const [username, setUsername] = useState("");

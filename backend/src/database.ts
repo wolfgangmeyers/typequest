@@ -82,6 +82,7 @@ export class Database {
                 entity = { id: nanoid(), coordinates: defaultCoordinates, type, name };
                 this.worldState.playerEntities[name] = entity;
             } else {
+                // This puts you back where you were last time
                 entity = JSON.parse(JSON.stringify(entity));
             }
         } else {
@@ -99,6 +100,7 @@ export class Database {
         const entity = this.worldState.entitiesById[id];
         if (entity) {
             if (entity.type === "player") {
+                // This saves your spot for next time
                 this.worldState.playerEntities[entity.name] = JSON.parse(
                     JSON.stringify(entity)
                 );
@@ -114,6 +116,21 @@ export class Database {
         if (fs.existsSync(this.dataFile)) {
             const data = fs.readFileSync(this.dataFile, "utf-8");
             this.worldState = JSON.parse(data);
+            // purge entities that are players, they will reload on reconnect
+            const deletedEntityIds: string[] = [];
+            for (const key in this.worldState.entitiesById) {
+                if (this.worldState.entitiesById[key].type === "player") {
+                    delete this.worldState.entitiesById[key];
+                    deletedEntityIds.push(key);
+                }
+            }
+            // purge players from places
+            for (const key in this.worldState.places) {
+                const place = this.worldState.places[key];
+                place.entityIds = place.entityIds.filter(
+                    (id) => !deletedEntityIds.includes(id)
+                );
+            }
         }
         this.saveIntervalHandle = setInterval(() => {
             this.save();
