@@ -7,23 +7,37 @@ import { GameClient } from "./client";
 
 const gameClient = new GameClient(`wss://typequest-api.ngrok.io`);
 
+interface Credentials {
+    username: string;
+    password: string;
+}
+
 function App() {
-    const [username, setUsername] = useState("");
+    const [login, setLogin] = useState<Credentials | null>(null);
+    const [register, setRegister] = useState<Credentials | null>(null);
 
     useEffect(() => {
         const onConnect = () => {
-            if (username) {
-                gameClient.login(username);
+            console.log("connected");
+            if (login) {
+                console.log("logging in")
+                gameClient.login(login.username, login.password);
+            }
+            if (register) {
+                console.log("registering")
+                gameClient.register(register.username, register.password);
             }
         };
         const onDisconnect = () => {
             console.log("disconnected");
-            setUsername("");
+            setLogin(null);
+            setRegister(null);
         };
         // this auto-logs the user in on connection
         gameClient.on("connect", onConnect);
         gameClient.on("disconnect", onDisconnect);
-        if (username) {
+        if (login || register) {
+            console.log("connecting");
             gameClient.connect();
         }
         
@@ -31,14 +45,20 @@ function App() {
             gameClient.off("connect", onConnect);
             gameClient.off("disconnect", onDisconnect);
         }
-    }, [username]);
+    }, [login, register]);
 
-    return username ? (
+    return (login || register) ? (
         <Container>
             <CommandLineInterface gameClient={gameClient} />
         </Container>
     ) : (
-        <Login onLogin={setUsername} />
+        <Login onLogin={(username: string, password: string) => setLogin({
+            username,
+            password,
+        })} onRegister={(username: string, password: string) => setRegister({
+            username,
+            password,
+        })} />
     );
 }
 

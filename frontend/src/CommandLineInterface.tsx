@@ -29,28 +29,40 @@ function CommandLineInterface({ gameClient }: Props) {
 
     const addToOutput = (message: string) => {
         const lines = message.split("\n");
-        let newOutput = [...output, ...lines];
-
-        // Limit history to 200 entries for performance
-        if (newOutput.length > 200) {
-            newOutput = newOutput.slice(newOutput.length - 200);
-        }
-
-        setOutput(newOutput);
+        setOutput(output => {
+            const newOutput = [...output, ...lines];
+            // Limit history to 200 entries for performance
+            if (newOutput.length > 200) {
+                return newOutput.slice(newOutput.length - 200);
+            }
+            return newOutput;
+        });
     };
 
-    gameClient.on("login", (message: any) => {
-        addToOutput(message);
-    });
-    gameClient.on("command", (message: any) => {
-        addToOutput(message);
-    });
-    gameClient.on("place_event", (message: any) => {
-        addToOutput(message.message);
-    });
-    gameClient.on("connect", () => {
-        setOutput([]);
-    });
+    useEffect(() => {
+        const postMessage = (message: string) => {
+            addToOutput(message);
+        }
+        const postPlaceEvent = (message: any) => {
+            addToOutput(message.message);
+        }
+        const clearOutput = () => {
+            setOutput([]);
+        }
+        
+        gameClient.on("login", postMessage);
+        gameClient.on("command", postMessage);
+        gameClient.on("place_event", postPlaceEvent);
+        gameClient.on("connect", clearOutput);
+
+        return () => {
+            gameClient.off("login", postMessage);
+            gameClient.off("command", postMessage);
+            gameClient.off("place_event", postPlaceEvent);
+            gameClient.off("connect", clearOutput);
+        }
+    }, [gameClient]);
+    
 
     useEffect(() => {
         if (inputRef.current) {

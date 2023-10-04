@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 
 export class GameClient extends EventEmitter {
     private ws: WebSocket | null = null;
-    private reconnect = true;
+    // private reconnect = true;
 
     constructor(private serverUrl: string) {
         super();
@@ -14,13 +14,8 @@ export class GameClient extends EventEmitter {
         this.ws.onopen = () => this.emit('connect');
         this.ws.onclose = () => {
             console.log("connection closed...")
-            if (this.reconnect) {
-                console.log("Reconnecting...")
-                setTimeout(() => this.connect(), 1000);
-            } else {
-                console.log("Disconnected")
-                this.emit('disconnect');
-            }
+            console.log("Disconnected")
+            this.emit('disconnect');
         }
         this.ws.onmessage = (message) => {
             const data = JSON.parse(message.data);
@@ -28,7 +23,7 @@ export class GameClient extends EventEmitter {
         };
     }
 
-    login(username: string) {
+    login(username: string, password: string) {
         if (!this.ws) {
             throw new Error('Not connected to the server');
         }
@@ -36,6 +31,19 @@ export class GameClient extends EventEmitter {
         this.ws.send(JSON.stringify({
             type: 'login',
             username: username,
+            password: password,
+        }));
+    }
+
+    register(username: string, password: string) {
+        if (!this.ws) {
+            throw new Error('Not connected to the server');
+        }
+
+        this.ws.send(JSON.stringify({
+            type: 'register',
+            username: username,
+            password: password,
         }));
     }
 
@@ -51,7 +59,7 @@ export class GameClient extends EventEmitter {
     }
 
     disconnect() {
-        this.reconnect = false;
+        // this.reconnect = false;
         if (this.ws) {
             this.ws.close();
             this.ws = null;

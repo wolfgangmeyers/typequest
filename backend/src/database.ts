@@ -8,6 +8,12 @@ interface WorldState {
     places: { [key: string]: Place };
     entitiesById: { [key: string]: Entity };
     playerEntities: { [key: string]: Entity };
+    users: { [key: string]: User };
+}
+
+export interface User {
+    username: string;
+    password: string;
 }
 
 export class Database {
@@ -22,8 +28,23 @@ export class Database {
             places: {},
             entitiesById: {},
             playerEntities: {},
+            users: {},
         };
         this.saveIntervalHandle = null;
+    }
+
+    createUser(username: string, password: string): User {
+        let user = this.getUser(username);
+        if (user) {
+            throw new Error("User already exists");
+        }
+        user = { username, password };
+        this.worldState.users[username] = user;
+        return user;
+    }
+
+    getUser(username: string): User | undefined {
+        return this.worldState.users[username];
     }
 
     createPlace(

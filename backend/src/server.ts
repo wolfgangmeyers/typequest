@@ -1,4 +1,5 @@
 import express from "express";
+import dotenv from "dotenv"
 import { Server as WebSocketServer } from "ws";
 import { WorldGridManager } from "./worldgridmanager"; // adjust as necessary
 import { EntityController } from "./entitycontroller";
@@ -6,11 +7,15 @@ import { Database } from "./database";
 import { WorldBuilderAgent } from "./worldbuilderagent";
 import { MessageHistory } from "./messagehistory";
 import { NotifyPlaceEvent } from "./models";
+import { UserRegistry } from "./userregistry";
+
+dotenv.config()
 
 // Set up your world
-const worldGrid = new Database(60 * 1000, "typequest.json");
-const worldGridManager = new WorldGridManager(worldGrid);
+const database = new Database(60 * 1000, "typequest.json");
+const worldGridManager = new WorldGridManager(database);
 worldGridManager.init();
+const userRegistry = new UserRegistry(database);
 const worldBuilder = new WorldBuilderAgent(
     worldGridManager,
     process.env.OPENAI_API_KEY!
@@ -49,18 +54,41 @@ wss.on("connection", (ws: any) => {
         try {
             console.log("message", message.toString());
             const msg = JSON.parse(message.toString());
-            if (msg.type === "login") {
-                // console.log("login message received")
-                // Handle login
+            if (msg.type === "login" || msg.type === "register") {
                 if (clients.has(msg.username)) {
-                    console.log("Username is taken");
+                    console.log("User is already connected");
                     ws.send(
                         JSON.stringify({
                             type: "error",
-                            message: "Username is taken",
+                            message: "User is already connected",
                         })
                     );
                 } else {
+                    if (msg.type === "login") {
+                        if (!userRegistry.login(msg.username, msg.password)) {
+                            console.log("Invalid credentials");
+                            ws.send(
+                                JSON.stringify({
+                                    type: "error",
+                                    message: "Invalid credentials",
+                                })
+                            );
+                            ws.close();
+                            return;
+                        }
+                    } else {
+                        if (!userRegistry.register(msg.username, msg.password)) {
+                            console.log("Username already exists");
+                            ws.send(
+                                JSON.stringify({
+                                    type: "error",
+                                    message: "Username already exists",
+                                })
+                            );
+                            ws.close();
+                            return;
+                        }
+                    }
                     console.log("creating entity");
                     entityId = worldGridManager.createEntity(
                         { x: 0, y: 0 },
@@ -71,7 +99,7 @@ wss.on("connection", (ws: any) => {
                     controller = new EntityController(
                         entityId,
                         worldGridManager,
-                        worldGrid
+                        database
                     );
                     controller.on("place_event", handlePlaceEvent);
                     controller.init();
@@ -176,7 +204,7 @@ async function processCommand(
             output = controller.emote(emoteCommand);
             break;
         case "/save":
-            worldGrid.save();
+            database.save();
             output = "World saved";
             break;
         case "/help":
